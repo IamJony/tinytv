@@ -64,3 +64,29 @@ Si va lento:
 ```sh
 tce-load -i ./sanson.tcz
 ```
+
+### En Debian / Ubuntu
+
+#### Opción 1: Instalación desde paquete `.deb` (Recomendada)
+Descarga el paquete precompilado desde la sección de [Releases](https://github.com/IamJony/tinytv/releases) e instálalo:
+
+```bash
+wget https://github.com/IamJony/tinytv/releases/download/v1.0.0/tinytv_1.0.0_amd64.deb
+sudo apt install ./tinytv_1.0.0_amd64.deb
+```
+
+#### Opción 2: Compilar y empaquetar desde el código fuente
+1. Instala las dependencias de compilación necesarias:
+```bash
+sudo apt update
+sudo apt install build-essential git libcurl4-openssl-dev libfltk1.3-dev libwebp-dev mplayer
+```
+2. Concede permisos de ejecución al script y ejecútalo para compilar y generar el paquete `.deb`:
+```bash
+chmod +x make_deb.sh
+./make_deb.sh
+```
+3. Instala el paquete generado en `/tmp`:
+```bash
+sudo apt install /tmp/tinytv_1.0.0_amd64.deb
+```
