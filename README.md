@@ -3,6 +3,7 @@
 **TinyTV** es un fork del proyecto **[Sanson](https://gitlab.com/AnddyCort/Sanson-FLinux )**, a diferencia del proyecto original este integra un **sistema de plugins externos** y añade una **Tienda de plugins** para instalar, actualizar y gestionar nuevas plataformas de streaming .
 
 ![TinyTV: interfaz principal](capturas/ui.png)
+![TinyTV: interfaz principal](capturas/ui2.png)
 
 Más capturas en el directorio [`capturas/`](capturas/).
 
