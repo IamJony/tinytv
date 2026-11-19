@@ -1,0 +1,23 @@
+Title:          tinytv.tcz
+Description:    TinyTV: modular video, live streams & music player (fork of Sansón)
+Version:        1.0.0
+Author:         AnddyCort (original Sansón), IamJony (TinyTV fork)
+Original-site:  https://github.com/IamJony/tinytv
+Copying-policy: GPL-3.0-or-later; QuickJS and cJSON MIT
+Size:           1120K
+Extension_by:   IamJony
+Tags:           youtube twitch kick music video live chat player mplayer plugins
+Comments:       Fork of Sansón (by AnddyCort), maintained by IamJony.
+                Introduces a dynamic external plugin architecture and an
+                integrated Plugin Store to install, update and manage
+                platforms without recompiling.
+                Watch videos and live streams with mplayer, listen to
+                music with synced lyrics and queue, download media in
+                parallel, and log in using HTTP headers or Netscape
+                cookie files.
+                Runs platform plugins in a built-in QuickJS engine.
+Change-log:     2026/10/16 1.0.0 first version (Sansón by AnddyCort)
+                2026/11/13 1.7.0 opens links from the command line
+                2026/11/19 2.0.0 TinyTV fork by IamJony: dynamic external
+                plugins, built-in Plugin Store, Netscape cookie support
+Current:        2026/11/19 2.0.0 TinyTV fork with external plugins and store

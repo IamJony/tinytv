@@ -1,0 +1,10 @@
+/usr/local/bin/tinytv
+/usr/local/share/applications/tinytv.desktop
+/usr/local/share/pixmaps/tinytv.png
+/usr/local/share/tinytv/LICENSE
+/usr/local/share/tinytv/LICENSE.cjson
+/usr/local/share/tinytv/LICENSE.quickjs
+/usr/local/share/tinytv/js/sanson_host.js
+/usr/local/share/tinytv/plugins/comun.js
+/usr/local/share/tinytv/plugins/latinotv/config.json
+/usr/local/share/tinytv/plugins/latinotv/script.js
