@@ -53,7 +53,7 @@ mksquashfs "$P" "$OUT/$APP.tcz" -all-root -noappend -no-progress -b 4096 -no-xat
 (cd "$P" && find usr -type f | sed 's|^|/|' | sort) > "$OUT/$APP.tcz.list"
 rm -rf "$P"
 
-printf '%s\n' fltk-1.3.tcz curl.tcz mplayer-cli.tcz libwebp1.tcz gcc_libs.tcz unzip.tcz > "$OUT/$APP.tcz.dep"
+printf '%s\n' fltk-1.3.tcz curl.tcz mplayer-cli.tcz libwebp1.tcz gcc_libs.tcz > "$OUT/$APP.tcz.dep"
 (cd "$OUT" && md5sum "$APP.tcz" > "$APP.tcz.md5.txt")
 SIZE=$(du -k "$OUT/$APP.tcz" | cut -f1)
 
