@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Sansón
+GenericName=Video player
+Comment=YouTube, Twitch and Kick for FLinux
+Exec=sanson
+Icon=sanson
+X-FullPathIcon=/usr/local/share/pixmaps/sanson.png
+Terminal=false
+StartupNotify=false
+Type=Application
+Categories=AudioVideo;Video;Network;

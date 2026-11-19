@@ -1,0 +1,12 @@
+const t=(a,b)=>{ if(a!==b) throw new Error("FAIL "+a+" != "+b); };
+t(new URL("about:blank").href,"about:blank");
+t(new URL("about:blank").origin,"null");
+t(new URL("https://www.youtube.com:443/a/./b/../c?x=1&y=a+b#h").href,"https://www.youtube.com/a/c?x=1&y=a+b#h");
+let u=new URL("https://a.com/p?q=1"); u.searchParams.set("pot","x y"); t(u.href,"https://a.com/p?q=1&pot=x+y");
+t(new URL("../z?k","https://a.com/x/y/w").href,"https://a.com/x/z?k");
+t(new URL("//b.com/q","https://a.com/").href,"https://b.com/q");
+u=new URL("data:text/plain,hi"); t(u.protocol,"data:"); t(u.pathname,"text/plain,hi");
+u=new URL("https://a.com"); u.search="?a=1"; t(u.searchParams.get("a"),"1"); u.hash="z"; t(u.href,"https://a.com/?a=1#z");
+t([...new URLSearchParams("a=1&b=2")].length,2);
+t(URL.canParse("nope"),false);
+log("URL OK");

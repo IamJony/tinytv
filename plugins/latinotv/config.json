@@ -1,0 +1,22 @@
+{
+  "name": "LatinoTV",
+  "description": "Canales en vivo de Latinoamérica vía listas M3U (IPTV).",
+  "author": "Sanson",
+  "platformUrl": "https://github.com/IamJony/IPTVListaLibre",
+  "version": 1,
+  "id": "latinotv",
+  "packages": ["Http"],
+  "sansonIncludes": ["../comun.js"],
+  "allowUrls": [
+    "raw.githubusercontent.com",
+    ".githubusercontent.com",
+    "github.com",
+    "iptv-org.github.io",
+    "i.imgur.com",
+    "upload.wikimedia.org",
+    "cdn.jkdesa.com",
+    "imgur.com",
+    ".googleusercontent.com",
+    ".*" 
+  ]
+}
