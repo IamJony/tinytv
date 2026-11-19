@@ -6,7 +6,7 @@ QJS_CFLAGS = $(CFLAGS) -D_GNU_SOURCE -w
 INC = -I$(QJS) -Ithird_party/cjson -Isrc
 CFLAGS_ALL = $(CFLAGS) -Wall $(INC)
 CXXFLAGS_ALL = $(CXXFLAGS) -Wall -std=c++11 $(INC) $(shell fltk-config --cxxflags)
-LIBS = -lcurl -lm -lpthread -ldl
+LIBS = -lcurl -lm -lpthread -ldl -latomic
 FLTK_LIBS = $(shell fltk-config --use-images --ldflags)
 CORE = build/engine.o build/hash.o build/ws.o build/stream.o build/download.o build/cjson.o build/qjs.a
 APP_OBJ = build/app.o build/app_watch.o build/app_music.o build/app_settings.o build/app_download.o build/ui.o build/views.o build/app_store.o \
