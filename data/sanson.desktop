@@ -1,10 +1,10 @@
 [Desktop Entry]
-Name=Sansón
+Name=tinytv
 GenericName=Video player
-Comment=YouTube, Twitch and Kick for FLinux
-Exec=sanson
-Icon=sanson
-X-FullPathIcon=/usr/local/share/pixmaps/sanson.png
+Comment=Multiple streaming in FLTK
+Exec=tinytv
+Icon=tinytv
+X-FullPathIcon=/usr/local/share/pixmaps/tinytv.png
 Terminal=false
 StartupNotify=false
 Type=Application
