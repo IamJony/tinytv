@@ -6,6 +6,7 @@
   <img src="capturas/ui.png" width="32%" alt="TinyTV: interfaz principal" />
   <img src="capturas/ui3.png" width="32%" alt="TinyTV: captura 3" />
   <img src="capturas/ui4.png" width="32%" alt="TinyTV: captura 4" />
+  <img src="capturas/ui5.png" width="32%" alt="TinyTV: captura 5" />
 </p>
 
 
