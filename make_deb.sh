@@ -107,6 +107,18 @@ Description: TinyTV: modular video, live streams & music player (fork of Sanson)
  headers or Netscape cookie files.
 EOF
 
+cat << 'EOF' > "$DEB_DIR/DEBIAN/postinst"
+#!/bin/sh
+set -e
+if [ -f /usr/share/tinytv/plugins/comun.js ]; then
+    mkdir -p /home/j/.config/tinytv/plugins
+    cp -f /usr/share/tinytv/plugins/comun.js /home/j/.config/tinytv/plugins/comun.js
+    chown -R j:j /home/j/.config/tinytv 2>/dev/null || true
+fi
+exit 0
+EOF
+chmod 755 "$DEB_DIR/DEBIAN/postinst"
+
 echo "${AZUL}Construyendo el archivo .deb final${SIN_COLOR}"
 cd "$WORKDIR"
 dpkg-deb --root-owner-group --build "$DEB_DIR_NAME"
@@ -114,6 +126,3 @@ dpkg-deb --root-owner-group --build "$DEB_DIR_NAME"
 rm -rf "$DEB_DIR"
 
 echo "${VERDE}Paquete creado con éxito en $WORKDIR/$DEB_DIR_NAME.deb${SIN_COLOR}"
-
-mkdir -p /home/j/.config/tinytv/plugins
-[ -f "$WORKDIR/$DIR_NAME/plugins/comun.js" ] && cp -f "$WORKDIR/$DIR_NAME/plugins/comun.js" /home/j/.config/tinytv/plugins/comun.js
