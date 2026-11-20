@@ -114,3 +114,6 @@ dpkg-deb --root-owner-group --build "$DEB_DIR_NAME"
 rm -rf "$DEB_DIR"
 
 echo "${VERDE}Paquete creado con éxito en $WORKDIR/$DEB_DIR_NAME.deb${SIN_COLOR}"
+
+mkdir -p /home/j/.config/tinytv/plugins
+[ -f "$WORKDIR/$DIR_NAME/plugins/comun.js" ] && cp -f "$WORKDIR/$DIR_NAME/plugins/comun.js" /home/j/.config/tinytv/plugins/comun.js
