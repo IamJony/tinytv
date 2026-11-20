@@ -9,8 +9,21 @@
   <img src="capturas/ui5.png" width="32%" alt="TinyTV: captura 5" />
 </p>
 
-
 Más capturas en el directorio [`capturas/`](capturas/).
+
+---
+
+## Índice
+
+- [Novedades TinyTV](#novedades-tinytv)
+- [Características heredadas de Sansón](#características-heredadas-de-sansón)
+- [¿Funcionará bien en mi equipo?](#funcionará-bien-en-mi-equipo)
+- [Instalar](#instalar)
+  - [En FLinux / Tiny Core](#en-flinux--tiny-core)
+  - [En Debian / Ubuntu](#en-debian--ubuntu)
+- [Solución de problemas de TinyTV](#solución-de-problemas-de-tinytv)
+  - [Los plugins no funcionan o no cargan](#los-plugins-no-funcionan-o-no-cargan)
+  - [Rendimiento lento o video entrecortado](#rendimiento-lento-o-video-entrecortado)
 
 ---
 
@@ -96,3 +109,32 @@ chmod +x make_deb.sh
 ```bash
 sudo apt install /tmp/tinytv_1.0.0_amd64.deb
 ```
+
+---
+
+## Solución de problemas de TinyTV
+
+*(Referencia externa: `docs/solucion_de_problemas_de_tinytv.md`)*
+
+### Los plugins no funcionan o no cargan
+
+- **Verifica `comun.js` en la carpeta de configuración:** si ningún plugin funciona o aparece error al cargar, comprueba que `comun.js` exista dentro de `~/.config/tinytv/plugins/`:
+  ```bash
+  ls -la ~/.config/tinytv/plugins/comun.js
+  ```
+- **Copia `comun.js` desde una ruta local disponible:** si falta, cópialo desde el directorio del sistema o del código fuente:
+  ```bash
+  mkdir -p ~/.config/tinytv/plugins
+  cp -f /usr/share/tinytv/plugins/comun.js ~/.config/tinytv/plugins/comun.js
+  ```
+- **Descarga `comun.js` si no está presente localmente:**
+  ```bash
+  mkdir -p ~/.config/tinytv/plugins
+  curl -fsSL "https://raw.githubusercontent.com/IamJony/tinytv/refs/heads/main/plugins/comun.js" -o ~/.config/tinytv/plugins/comun.js
+  ```
+
+### Rendimiento lento o video entrecortado
+
+- Selecciona una calidad más baja en **Ajustes** (`360p` o `160p`).
+- Activa el **video liviano** en **Ajustes** para reducir el consumo de CPU.
+- Mantén la ventana en tamaño normal en lugar de pantalla completa en equipos con poca potencia gráfica.
