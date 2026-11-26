@@ -107,7 +107,7 @@ chmod +x make_deb.sh
 ```
 3. Instala el paquete generado en `/tmp`:
 ```bash
-sudo apt install /tmp/tinytv_1.0.0_amd64.deb
+sudo apt install /tmp/tinytv_1.0.1_amd64.deb
 ```
 
 ---
