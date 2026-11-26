@@ -90,8 +90,8 @@ tce-load -i ./sanson.tcz
 Descarga el paquete precompilado desde la sección de [Releases](https://github.com/IamJony/tinytv/releases) e instálalo:
 
 ```bash
-wget https://github.com/IamJony/tinytv/releases/download/v1.0.0/tinytv_1.0.0_amd64.deb
-sudo apt install ./tinytv_1.0.0_amd64.deb
+wget https://github.com/IamJony/tinytv/releases/download/v1.0.1/tinytv_1.0.1_amd64.deb
+sudo apt install ./tinytv_1.0.1_amd64.deb
 ```
 
 #### Opción 2: Compilar y empaquetar desde el código fuente
