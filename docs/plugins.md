@@ -712,11 +712,11 @@ Con `SP_DEBUG=1` en el entorno, `DBG()` imprime trazas en `stderr`: peticiones, 
 
 | Tipo                         | Cuándo usarlo                | Vídeo | Audio | En vivo | Tipo interno           |
 | ---------------------------- | ---------------------------- | ----- | ----- | ------- | ---------------------- |
-| `VideoUrlSource`             | Archivo directo MP4/WebM/MKV | ✅     | ✅     | ❌       | `K_RANGE` / `K_DIRECT` |
-| `AudioUrlSource`             | Pista de audio separada      | ❌     | ✅     | ❌       | `K_RANGE` / `K_DIRECT` |
-| `HLSSource`                  | `.m3u8` (VOD o live)         | ✅     | ✅     | ✅       | `K_HLS`                |
-| `DashSource`                 | `.mpd`                       | ✅     | ✅     | ✅       | `K_DIRECT`             |
-| `UnMuxVideoSourceDescriptor` | Vídeo y audio separados      | ✅     | ✅     | ❌       | Mixto                  |
+| `VideoUrlSource`             | Archivo directo MP4/WebM/MKV | SI     | SI     | NO       | `K_RANGE` / `K_DIRECT` |
+| `AudioUrlSource`             | Pista de audio separada      | NO     | SI     | NO       | `K_RANGE` / `K_DIRECT` |
+| `HLSSource`                  | `.m3u8` (VOD o live)         | SI     | SI     | SI       | `K_HLS`                |
+| `DashSource`                 | `.mpd`                       | SI     | SI     | SI       | `K_DIRECT`             |
+| `UnMuxVideoSourceDescriptor` | Vídeo y audio separados      | SI     | SI     | NO       | Mixto                  |
 
 ---
 
