@@ -346,11 +346,15 @@ void VideoBox::draw()
 {
     fl_rectf(0, 0, w(), h(), FL_BLACK);
     if (!cover.empty()) {
-        // Sizes in steps of 32: resizing the window does not scale the cover each pixel.
-        int side = std::max(32, (std::min(w(), h()) - 8) / 32 * 32);
+        int max_box = std::min(w() - 24, std::max(64, h() * 58 / 100));
+        int side = std::max(48, (max_box / 16) * 16);
         Fl_RGB_Image *img = get_thumb(cover, side, side, true);
-        if (img)
-            img->draw((w() - img->w()) / 2, (h() - img->h()) / 2);
+        if (img) {
+            int ix = (w() - img->w()) / 2;
+            int iy = (h() - img->h()) / 2;
+            fl_rect(ix - 2, iy - 2, img->w() + 4, img->h() + 4, C_LINE);
+            img->draw(ix, iy);
+        }
     }
     if (!text.empty()) {
         if (!cover.empty()) // a band under the text so it reads over the cover

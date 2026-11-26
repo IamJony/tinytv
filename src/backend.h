@@ -52,6 +52,8 @@ struct Source {
     int height = 0;
     int kind = 0;
     long long vlen = 0, alen = 0;
+    bool raw_player = false;
+    std::vector<std::string> mplayer_args;
 };
 
 enum { S_HLS, S_RANGE, S_DIRECT, S_HACKSTREAM };

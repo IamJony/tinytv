@@ -961,6 +961,19 @@ static void on_details(Details d, int g)
         d.item.thumb = old.thumb;
     if (d.item.author_url.empty())
         d.item.author_url = old.author_url;
+    bool is_raw_media = false;
+    for (const auto &s : d.sources) {
+        if (s.raw_player) {
+            is_raw_media = true;
+            break;
+        }
+    }
+    if (!is_raw_media && d.item.live && d.item.duration == 0 && !d.item.thumb.empty())
+        is_raw_media = true;
+
+    if (is_raw_media && !d.item.thumb.empty())
+        app->video->cover = d.item.thumb;
+
     if (d.item.plat == P_MUSIC) {
         if (!d.item.thumb.empty())
             app->video->cover = d.item.thumb;
@@ -984,6 +997,8 @@ static void on_details(Details d, int g)
         app->header_title->set(clean(d.item.title));
     app->watch_author->copy_label(clean(d.item.author).c_str());
     app->watch_meta->set(watch_meta_text(d));
+    if (d.description.empty() && !app->cur.description.empty())
+        d.description = app->cur.description;
     app->desc_buf->text(clean(d.description).c_str());
     bool subbed = subs_has(d.item.author_url);
     app->subscribe_watch->label(subbed ? "Siguiendo" : "Seguir");
@@ -1038,7 +1053,13 @@ void App::open_item(const Item &it)
         open_channel(it.plat, it.url, it.title);
         return;
     }
-    bool bg = music_bg && it.plat == P_MUSIC && view != V_WATCH;
+    Item item = it;
+    if (item.kind == "radio") {
+        item.kind = "video";
+        item.live = true;
+        item.duration = 0;
+    }
+    bool bg = music_bg && item.plat == P_MUSIC && view != V_WATCH;
     stop_watch();
     watch_gen++;
     if (bg) {
@@ -1057,34 +1078,35 @@ void App::open_item(const Item &it)
         select_nav(-1);
     }
     cur = Details();
-    cur.item = it;
+    cur.item = item;
     cur_source = -1;
-    panel = panel_for(it);
+    panel = panel_for(item);
     related_tab = setting("video_panel", "main") == "related";
-    bool c_ovr = false, has_c = backend_comments_enabled(it.plat, c_ovr);
-    bool ch_ovr = false, has_ch = backend_chat_enabled(it.plat, ch_ovr);
-    bool comments_on = has_c ? c_ovr : (it.plat == P_YOUTUBE && !it.live);
+    bool c_ovr = false, has_c = backend_comments_enabled(item.plat, c_ovr);
+    bool ch_ovr = false, has_ch = backend_chat_enabled(item.plat, ch_ovr);
+    bool comments_on = has_c ? c_ovr : (item.plat == P_YOUTUBE && !item.live);
     bool chat_on = has_ch ? ch_ovr : true;
-    if (!comments_on && (!chat_on || !it.live)) related_tab = true;
+    if (!comments_on && (!chat_on || !item.live)) related_tab = true;
     vid_w = vid_h = 0;
     chat->clear_all();
     comments->clear_all();
     related->status = "Cargando…";
     related->set({}, -1);
     if (!bg)
-        header_title->set(clean(it.title));
-    watch_title->set(clean(it.title));
+        header_title->set(clean(item.title));
+    watch_title->set(clean(item.title));
     watch_author->label(nullptr);
-    watch_author->copy_label(clean(it.author).c_str());
+    watch_author->copy_label(clean(item.author).c_str());
     watch_meta->set("");
     desc_buf->text("");
     quality->clear();
     audio_sel = 0;
     sub_sel = 0;
     sub_path.clear();
-    video->text = it.plat == P_MUSIC ? "Preparando la canción…" : "Preparando…";
-    video->cover = it.plat == P_MUSIC ? it.thumb : "";
-    if (it.plat == P_MUSIC) {
+    bool is_radio = (item.plat == P_MUSIC) || (item.live && item.duration == 0);
+    video->text = item.plat == P_MUSIC ? "Preparando la canción…" : "Preparando…";
+    video->cover = is_radio ? item.thumb : "";
+    if (item.plat == P_MUSIC) {
         lyrics->clear_all("Buscando la letra…");
         queue_view->current = qpos;
         queue_view->show_current();
@@ -1092,9 +1114,9 @@ void App::open_item(const Item &it)
     video->redraw();
     layout();
     update_controls(); // otherwise the time label keeps the previous video's (e.g. "EN VIVO")
-    set_status("Obteniendo fuentes de " + std::string(plat_name(it.plat)) + "…");
+    set_status("Obteniendo fuentes de " + std::string(plat_name(item.plat)) + "…");
     int g = watch_gen;
-    backend_details(it.plat, it.url, [g](Details d) { on_details(d, g); });
+    backend_details(item.plat, item.url, [g](Details d) { on_details(d, g); });
 }
 
 void App::play_source(int idx, double start)
@@ -1115,14 +1137,24 @@ void App::play_source(int idx, double start)
     r.sub = sub_path;
     r.live = cur.item.live;
     r.start = start;
-    r.audio_only = cur.item.plat == P_MUSIC;
+    r.audio_only = (cur.item.plat == P_MUSIC) || s.raw_player;
     end_handled = false;
     auto own = [](char *u) {
         std::string s = u ? u : "";
         free(u);
         return s;
     };
-    if (s.kind == S_HLS) {
+    if (s.raw_player) {
+        if (!cur.item.thumb.empty() && video->cover.empty())
+            video->cover = cur.item.thumb;
+        r.raw_player = true;
+        r.hls = false;
+        r.fmp4 = false;
+        r.video = s.url;
+        r.mplayer_args = s.mplayer_args;
+        if (!s.audio.empty())
+            r.audio = s.audio;
+    } else if (s.kind == S_HLS) {
         int fl = cur.item.live ? SP_LIVE | (cur.item.plat == P_TWITCH ? SP_SKIP_ADS : 0) : 0;
         r.video = own(sp_add_hls(s.url.c_str(), fl, start));
         r.hls = true;
@@ -1573,16 +1605,26 @@ void App::build_watch()
     subscribe_watch->sel_color = C_GREEN;
     subscribe_watch->callback([](Fl_Widget *, void *) {
         const Item &it = app->cur.item;
-        if (it.author_url.empty())
+        bool is_radio_station = it.live && it.duration == 0 && !it.url.empty();
+        if (!is_radio_station && it.author_url.empty())
             return;
         Item c;
         c.plat = it.plat;
-        c.kind = "channel";
-        c.url = it.author_url;
-        c.title = it.author;
-        c.author = c.title;
-        c.author_url = c.url;
-        c.thumb = it.author_thumb;
+        if (is_radio_station) {
+            c.kind = "radio";
+            c.url = it.url;
+            c.title = it.title;
+            c.author = it.author;
+            c.author_url = it.author_url.empty() ? it.url : it.author_url;
+            c.thumb = it.thumb;
+        } else {
+            c.kind = "channel";
+            c.url = it.author_url;
+            c.title = it.author;
+            c.author = c.title;
+            c.author_url = c.url;
+            c.thumb = it.author_thumb;
+        }
         subs_toggle(c);
         bool s = subs_has(c.url);
         app->subscribe_watch->label(s ? "Siguiendo" : "Seguir");

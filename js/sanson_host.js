@@ -132,6 +132,7 @@ class PlaybackTracker {
     setProgress(seconds) {}
 }
 class SubtitleSource { constructor(obj) { Object.assign(this, obj ?? {}); } }
+class RawPlayerSource { constructor(obj) { Object.assign(this, obj ?? {}); } }
 
 class RatingLikes { constructor(likes) { this.type = 1; this.likes = likes; } }
 class RatingLikesDislikes { constructor(likes, dislikes) { this.type = 2; this.likes = likes; this.dislikes = dislikes; } }
@@ -584,6 +585,7 @@ function __sansonKind(v) {
     if (v instanceof DashSource) return "DashSource";
     if (v instanceof VideoUrlSource) return "VideoUrlSource";
     if (v instanceof AudioUrlSource) return "AudioUrlSource";
+    if (v instanceof RawPlayerSource) return "RawPlayerSource";
     if (v instanceof Comment) return "Comment";
     if (v instanceof LiveEvent) return "LiveEvent";
     return null;

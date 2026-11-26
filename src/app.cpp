@@ -17,6 +17,19 @@ void hide_store_view();
 
 App *app;
 
+#include <signal.h>
+#include <sys/types.h>
+
+static void stop_hackstream_proxy()
+{
+    // Termina procesos hackstream_proxy si quedaron activos antes de reiniciar
+    int rc = system("pkill -f hackstream_proxy 2>/dev/null || killall -q hackstream_proxy 2>/dev/null");
+    (void)rc;
+    usleep(150000);
+    rc = system("pkill -9 -f hackstream_proxy 2>/dev/null || killall -9 -q hackstream_proxy 2>/dev/null");
+    (void)rc;
+}
+
 void quit_app()
 {
     if (!downloads_quit())
@@ -243,6 +256,8 @@ void App::nav_to(int i)
         show_store();
         break;
     case NAV_RESTART:
+        player_stop();
+        stop_hackstream_proxy();
         store_restart_app();
         break;
     }

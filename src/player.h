@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 struct PlayRequest {
     std::string video;
@@ -10,6 +11,8 @@ struct PlayRequest {
     bool live = false;
     bool hls = false;
     bool fmp4 = false;
+    bool raw_player = false;
+    std::vector<std::string> mplayer_args;
     std::string sub;    // SubRip file shown from the start
     double start = 0;
     bool audio_only = false; // no picture: mplayer runs with -novideo

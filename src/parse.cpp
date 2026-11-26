@@ -410,6 +410,48 @@ static void parse_sources(Details &d, cJSON *root)
     }
 }
 
+
+static void parse_one_raw_source(Details &d, cJSON *s)
+{
+    if (!s)
+        return;
+    std::string u = jstr(s, "url");
+    if (u.empty())
+        return;
+    Source src;
+    src.kind = S_DIRECT;
+    src.url = u;
+    src.label = jstr(s, "label");
+    if (src.label.empty())
+        src.label = "Directo";
+    src.audio = jstr(s, "audioUrl");
+    src.raw_player = true;
+    cJSON *args = cJSON_GetObjectItemCaseSensitive(s, "args");
+    cJSON *a;
+    cJSON_ArrayForEach(a, args)
+    {
+        if (cJSON_IsString(a) && a->valuestring)
+            src.mplayer_args.push_back(a->valuestring);
+    }
+    d.sources.push_back(src);
+}
+
+static void parse_raw_sources(Details &d, cJSON *root)
+{
+    cJSON *rs = cJSON_GetObjectItemCaseSensitive(root, "rawSources");
+    cJSON *s;
+    cJSON_ArrayForEach(s, rs)
+        parse_one_raw_source(d, s);
+
+    cJSON *video = cJSON_GetObjectItemCaseSensitive(root, "video");
+    cJSON *vs = cJSON_GetObjectItemCaseSensitive(video, "videoSources");
+    cJSON_ArrayForEach(s, vs)
+    {
+        if (jstr(s, "__type") == "RawPlayerSource")
+            parse_one_raw_source(d, s);
+    }
+}
+
 void parse_details(Details &d, cJSON *v)
 {
     int plat = d.item.plat;
@@ -422,6 +464,7 @@ void parse_details(Details &d, cJSON *v)
     cJSON *rating = cJSON_GetObjectItemCaseSensitive(v, "rating");
     d.likes = jnum(rating, "likes");
     parse_sources(d, v);
+    parse_raw_sources(d, v);
     cJSON *sb;
     cJSON_ArrayForEach(sb, cJSON_GetObjectItemCaseSensitive(v, "subtitles"))
     {

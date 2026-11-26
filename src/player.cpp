@@ -214,11 +214,44 @@ void player_play(unsigned long wid, const PlayRequest &req)
     status = "Conectando…";
     volume = atoi(setting("volume", "80").c_str());
 
-    std::vector<std::string> a = {"mplayer", "-prefer-ipv4", "-slave", "-quiet", "-identify", "-idle", "-nomouseinput",
-                                  "-input", "nodefault-bindings:conf=/dev/null", "-noconsolecontrols",
-                                  "-wid", std::to_string(wid), "-vo", setting("vo", "xv,x11"), "-ao",
-                                  "pulse,alsa,null", "-zoom", "-framedrop", "-sws", "0", "-lavdopts",
-                                  "skiploopfilter=all", "-volume", std::to_string(volume), "-softvol"};
+    std::vector<std::string> a;
+    if (req.raw_player) {
+        a = {
+            "mplayer", "-prefer-ipv4", "-slave", "-quiet", "-identify", "-idle",
+            "-nomouseinput", "-input", "nodefault-bindings:conf=/dev/null",
+            "-noconsolecontrols", "-wid", std::to_string(wid),
+            "-vo", setting("vo", "xv,x11"), "-ao", "pulse,alsa,null",
+            "-volume", std::to_string(volume), "-softvol", "-osdlevel", "0"
+        };
+        if (req.audio_only)
+            a.push_back("-novideo");
+        static const std::vector<std::string> allowed_no_arg = {
+            "-novideo", "-nolirc", "-correct-pts", "-nocorrect-pts", "-framedrop", "-zoom"
+        };
+        static const std::vector<std::string> allowed_with_arg = {
+            "-cache", "-cache-min", "-demuxer", "-audio-demuxer",
+            "-lavfdopts", "-lavdopts", "-user-agent", "-referrer", "-mc", "-fps", "-ao", "-vo"
+        };
+        for (size_t i = 0; i < req.mplayer_args.size(); ++i) {
+            const std::string &arg = req.mplayer_args[i];
+            if (std::find(allowed_no_arg.begin(), allowed_no_arg.end(), arg) != allowed_no_arg.end()) {
+                if (std::find(a.begin(), a.end(), arg) == a.end())
+                    a.push_back(arg);
+            } else if (std::find(allowed_with_arg.begin(), allowed_with_arg.end(), arg) != allowed_with_arg.end()
+                       && i + 1 < req.mplayer_args.size()) {
+                a.push_back(arg);
+                a.push_back(req.mplayer_args[++i]);
+            }
+        }
+        if (!req.audio.empty())
+            a.insert(a.end(), {"-audiofile", req.audio});
+        a.push_back(req.video);
+    } else {
+    a = {"mplayer", "-prefer-ipv4", "-slave", "-quiet", "-identify", "-idle", "-nomouseinput",
+         "-input", "nodefault-bindings:conf=/dev/null", "-noconsolecontrols",
+         "-wid", std::to_string(wid), "-vo", setting("vo", "xv,x11"), "-ao",
+         "pulse,alsa,null", "-zoom", "-framedrop", "-sws", "0", "-lavdopts",
+         "skiploopfilter=all", "-volume", std::to_string(volume), "-softvol"};
     // No -autosync: with it the video stayed slow after a pause (0.72x with 30, measured).
     if (req.live) {
         // Without its audio (YouTube's separate track) the video is light: 10% of 8 MB is more
@@ -269,6 +302,7 @@ void player_play(unsigned long wid, const PlayRequest &req)
         a.insert(a.end(), {"-referrer", req.referer});
     a.push_back(req.video);
 
+    }
     int pin[2], pout[2];
     if (pipe(pin) || pipe(pout))
         return;
