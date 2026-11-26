@@ -1,6 +1,6 @@
 Title:          tinytv.tcz
 Description:    TinyTV: modular video, live streams & music player (fork of Sansón)
-Version:        1.0.0
+Version:        1.0.1
 Author:         AnddyCort (original Sansón), IamJony (TinyTV fork)
 Original-site:  https://github.com/IamJony/tinytv
 Copying-policy: GPL-3.0-or-later; QuickJS and cJSON MIT
