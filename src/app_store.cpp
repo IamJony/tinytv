@@ -5,6 +5,7 @@
 #include <FL/fl_draw.H>
 #include <FL/Fl_RGB_Image.H>
 #include <cctype>
+#include <memory>
 
 static void store_anim_tick(void *v);
 
@@ -17,10 +18,26 @@ public:
     bool dragging_scroll = false;
     int drag_offset_y = 0;
 
+    int top_bar_h() const {
+        if (!app) return 0;
+        for (auto &p : app->store_items)
+            if (store_has_update(p)) return 44;
+        return 0;
+    }
+
+    int count_updates() const {
+        int n = 0;
+        if (app)
+            for (auto &p : app->store_items)
+                if (store_has_update(p)) n++;
+        return n;
+    }
+
+    void update_all();
+
     int content_total_h() const {
-        return (app && !app->store_items.empty())
-            ? ((int)app->store_items.size() * (110 + 15) + 15)
-            : 0;
+        if (!app || app->store_items.empty()) return 0;
+        return top_bar_h() + (int)app->store_items.size() * (110 + 15) + 15;
     }
 
     bool scrollbar_geom(int &bx, int &by, int &bw, int &bh, int &max_scroll) const {
@@ -74,8 +91,25 @@ public:
 
         int pad = 15;
         int row_h = 110;
-        int y_pos = y() + pad - scroll_y;
-        int row_w = w() - (pad * 2) - 20; 
+        int bar_h = top_bar_h();
+        int y_pos = y() + pad - scroll_y + bar_h;
+        int row_w = w() - (pad * 2) - 20;
+
+        if (bar_h > 0) {
+            int by = y() + pad - scroll_y;
+            fl_rectf(x() + pad, by, row_w, 34, C_PANEL);
+            int n = count_updates();
+            fl_font(FL_HELVETICA_BOLD, 13);
+            fl_color(C_TEXT);
+            std::string msg = std::to_string(n) + (n == 1 ? " actualizacion disponible" : " actualizaciones disponibles");
+            fl_draw(msg.c_str(), x() + pad + 15, by, row_w - 200, 34, FL_ALIGN_LEFT, nullptr, 0);
+            int bw = 170, bx = x() + pad + row_w - bw - 15;
+            Fl_Color bc = (hover_row == -1 && hover_btn == 2) ? C_BTN_HI : C_SEL;
+            fl_rectf(bx, by + 5, bw, 24, bc);
+            fl_font(FL_HELVETICA_BOLD, 12);
+            fl_color(C_TEXT);
+            fl_draw("Actualizar todo", bx, by + 5, bw, 24, FL_ALIGN_CENTER, nullptr, 0);
+        }
 
         for (int i = 0; i < (int)app->store_items.size(); i++) {
             auto &p = app->store_items[i];
@@ -122,15 +156,16 @@ public:
             int btn_x = x() + pad + row_w - 20 - btn_w;
             
             bool inst = p.installed;
-            
+            bool upd  = store_has_update(p);
 
             Fl_Color b_col = (hover_row == i && hover_btn == 0) ? C_BTN_HI : C_BTN;
-            if (inst) b_col = C_GREEN;
+            if (upd)       b_col = (hover_row == i && hover_btn == 0) ? C_ACCENT : C_SEL;
+            else if (inst) b_col = C_GREEN;
 
             fl_rectf(btn_x, btn_y, btn_w, 36, b_col);
             fl_font(FL_HELVETICA_BOLD, 12);
             fl_color(C_TEXT);
-            std::string lbl = inst ? "Instalado" : "Instalar";
+            std::string lbl = upd ? "Actualizar" : (inst ? "Instalado" : "Instalar");
             fl_draw(lbl.c_str(), btn_x, btn_y, btn_w, 36, FL_ALIGN_CENTER, nullptr, 0);
 
             if (inst) {
@@ -184,26 +219,40 @@ public:
 
         if (e == FL_MOVE) {
             int pad = 15, row_h = 110;
-            int my = Fl::event_y() - y() + scroll_y - pad;
-            int row = my / (row_h + pad);
-            int mx = Fl::event_x() - x();
+            int real_y = Fl::event_y() - y() + scroll_y;
+            int real_x = Fl::event_x() - x();
 
-            int h_btn = -1;
-            if (row >= 0 && row < (int)app->store_items.size()) {
+            int h_btn = -1, h_row = -1;
+            int bar_h = top_bar_h();
+
+            if (bar_h > 0 && real_y >= pad && real_y <= pad + 34) {
                 int row_w = w() - (pad * 2) - 20;
-                int btn_x = pad + row_w - 20 - 100;
-                int del_x = btn_x - 90 - 10;
-                int btn_y = (row * (row_h + pad)) + pad + (row_h - 36) / 2;
-                int real_my = Fl::event_y() - y() + scroll_y;
-
-                if (mx >= btn_x && mx <= btn_x + 100 && real_my >= btn_y && real_my <= btn_y + 36)
-                    h_btn = 0;
-                else if (app->store_items[row].installed && mx >= del_x && mx <= del_x + 90 && real_my >= btn_y && real_my <= btn_y + 36)
-                    h_btn = 1;
+                int bw = 170, bx = pad + row_w - bw - 15;
+                if (real_x >= bx && real_x <= bx + bw)
+                    h_btn = 2;
+            } else {
+                int content_y = real_y - bar_h - pad;
+                if (content_y >= 0)
+                    h_row = content_y / (row_h + pad);
+                if (h_row >= (int)app->store_items.size()) h_row = -1;
+                if (h_row >= 0) {
+                    int row_w = w() - (pad * 2) - 20;
+                    int btn_x = pad + row_w - 20 - 100;
+                    int del_x = btn_x - 90 - 10;
+                    int in_row = content_y - h_row * (row_h + pad);
+                    int btn_y = (row_h - 36) / 2;
+                    if (in_row >= btn_y && in_row <= btn_y + 36) {
+                        if (real_x >= btn_x && real_x <= btn_x + 100)
+                            h_btn = 0;
+                        else if (app->store_items[h_row].installed &&
+                                 real_x >= del_x && real_x <= del_x + 90)
+                            h_btn = 1;
+                    }
+                }
             }
 
-            if (row != hover_row || h_btn != hover_btn) {
-                hover_row = row;
+            if (h_row != hover_row || h_btn != hover_btn) {
+                hover_row = h_row;
                 hover_btn = h_btn;
                 redraw();
             }
@@ -228,17 +277,25 @@ public:
                 redraw();
                 return 1;
             }
+            if (hover_btn == 2) {
+                update_all();
+                return 1;
+            }
             if (hover_row >= 0 && hover_row < (int)app->store_items.size()) {
                 StorePlugin p = app->store_items[hover_row];
                 if (hover_btn == 0) {
-                    if (!p.installed) {
-                        app->set_status("Descargando " + p.name + "...");
+                    bool upd = store_has_update(p);
+                    if (!p.installed || upd) {
+                        app->set_status(std::string(upd ? "Actualizando " : "Descargando ") + p.name + "...");
                         store_install(p, [p](bool ok, std::string err) {
                             for (auto &sp : app->store_items)
-                                if (sp.id == p.id) { sp.installed = ok; sp.local_version = p.version; break; }
+                                if (sp.id == p.id) {
+                                    if (ok) { sp.installed = true; sp.local_version = p.version; }
+                                    break;
+                                }
                             if (app->view != V_STORE) return;
                             app->show_store();
-                            if (ok) app->set_status("Instalado: " + p.name + ". Reinicia TinyTV.");
+                            if (ok) app->set_status(std::string(store_has_update(p) ? "Actualizado: " : "Instalado: ") + p.name + ". Reinicia TinyTV.");
                             else app->set_status("Error: " + err);
                         });
                     }
@@ -259,6 +316,41 @@ public:
         return Fl_Group::handle(e);
     }
 };
+
+void StoreView::update_all() {
+    if (!app) return;
+    std::vector<std::string> ids;
+    for (auto &p : app->store_items)
+        if (store_has_update(p)) ids.push_back(p.id);
+    if (ids.empty()) return;
+
+    app->set_status("Actualizando " + std::to_string(ids.size()) + " plugins...");
+
+    auto step = std::make_shared<std::function<void(size_t)>>();
+    *step = [ids, step](size_t i) {
+        if (i >= ids.size()) {
+            app->set_status("Actualizacion completa. Reinicia TinyTV.");
+            if (app->view == V_STORE) app->show_store();
+            return;
+        }
+        StorePlugin target;
+        bool found = false;
+        for (auto &p : app->store_items)
+            if (p.id == ids[i]) { target = p; found = true; break; }
+        if (!found) { (*step)(i + 1); return; }
+        store_install(target, [target, i, step](bool ok, std::string err) {
+            for (auto &p : app->store_items)
+                if (p.id == target.id) {
+                    if (ok) { p.installed = true; p.local_version = target.version; }
+                    break;
+                }
+            if (!ok) app->set_status("Error en " + target.name + ": " + err);
+            else app->set_status("Actualizado: " + target.name);
+            (*step)(i + 1);
+        });
+    };
+    (*step)(0);
+}
 
 static StoreView *store_view = nullptr;
 

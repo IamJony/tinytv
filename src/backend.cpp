@@ -28,6 +28,19 @@ int P_LatinoTV = 0;
 int P_COUNT = 1;
 int P_YOUTUBE = -1, P_TWITCH = -1, P_KICK = -1, P_MUSIC = -1;
 static std::vector<std::string> g_plat_ids, g_plat_names;
+static std::vector<bool> g_plat_comments_set, g_plat_comments_val;
+static std::vector<bool> g_plat_chat_set, g_plat_chat_val;
+
+bool backend_comments_enabled(int plat, bool &out) {
+    if (plat < 0 || plat >= (int)g_plat_comments_set.size() || !g_plat_comments_set[plat]) return false;
+    out = g_plat_comments_val[plat];
+    return true;
+}
+bool backend_chat_enabled(int plat, bool &out) {
+    if (plat < 0 || plat >= (int)g_plat_chat_set.size() || !g_plat_chat_set[plat]) return false;
+    out = g_plat_chat_val[plat];
+    return true;
+}
 
 std::string backend_plat_id(int p) {
     if (p < 0 || p >= (int)g_plat_ids.size()) return "";
@@ -41,8 +54,12 @@ const char *backend_plat_name_dyn(int p) {
 void backend_scan_plugins()
 {
     g_plat_ids.clear(); g_plat_names.clear();
+    g_plat_comments_set.clear(); g_plat_comments_val.clear();
+    g_plat_chat_set.clear(); g_plat_chat_val.clear();
     g_plat_ids.push_back("latinotv");
     g_plat_names.push_back("LatinoTV");
+    g_plat_comments_set.push_back(false); g_plat_comments_val.push_back(false);
+    g_plat_chat_set.push_back(false); g_plat_chat_val.push_back(false);
     auto scan = [&](const std::string &root) {
         DIR *d = opendir(root.c_str());
         if (!d) return;
@@ -57,9 +74,17 @@ void backend_scan_plugins()
             cJSON *r = cJSON_Parse(read_file(cfg).c_str());
             std::string name = jstr(r, "name");
             if (name.empty()) name = e->d_name;
+            cJSON *jc = cJSON_GetObjectItemCaseSensitive(r, "comments");
+            bool c_set = jc && cJSON_IsBool(jc), c_val = c_set && cJSON_IsTrue(jc);
+            cJSON *jch = cJSON_GetObjectItemCaseSensitive(r, "chat");
+            bool ch_set = jch && cJSON_IsBool(jch), ch_val = ch_set && cJSON_IsTrue(jch);
             cJSON_Delete(r);
             g_plat_ids.push_back(e->d_name);
             g_plat_names.push_back(name);
+            g_plat_comments_set.push_back(c_set);
+            g_plat_comments_val.push_back(c_val);
+            g_plat_chat_set.push_back(ch_set);
+            g_plat_chat_val.push_back(ch_val);
         }
         closedir(d);
     };

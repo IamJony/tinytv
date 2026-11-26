@@ -18,9 +18,15 @@ static int panel_for(const Item &it)
 {
     if (it.plat == P_MUSIC)
         return setting("music_panel", "lyrics") == "queue" ? App::PANEL_QUEUE : App::PANEL_LYRICS;
+    bool c_ovr = false, has_c = backend_comments_enabled(it.plat, c_ovr);
+    bool ch_ovr = false, has_ch = backend_chat_enabled(it.plat, ch_ovr);
+    bool comments_on = has_c ? c_ovr : (it.plat == P_YOUTUBE);
+    bool chat_on = has_ch ? ch_ovr : true;
     if (it.live)
-        return App::PANEL_LIVE;
-    return it.plat == P_YOUTUBE ? App::PANEL_COMMENTS : App::PANEL_REPLAY;
+        return chat_on ? App::PANEL_LIVE : App::PANEL_REPLAY;
+    if (comments_on)
+        return App::PANEL_COMMENTS;
+    return App::PANEL_REPLAY;
 }
 
 // Box for the picture inside bx,by,bw,bh keeping its aspect (mplayer -wid stretches the
@@ -98,8 +104,21 @@ static void place_panel(App *a, int px, int py, int pw, int ph)
     a->panel_tabs->show();
     a->tab_btn[0]->resize(px, py, pw / 2, 26);
     a->tab_btn[1]->resize(px + pw / 2, py, pw - pw / 2, 26);
-    const char *t0 = music ? "Letra" : a->panel == App::PANEL_COMMENTS ? "Comentarios" : "Chat";
+    bool ch_ovr_t = false, has_ch_t = backend_chat_enabled(a->cur.item.plat, ch_ovr_t);
+    bool c_ovr_t = false, has_c_t = backend_comments_enabled(a->cur.item.plat, c_ovr_t);
+    bool chat_disabled_t = has_ch_t && !ch_ovr_t;
+    bool comments_disabled_t = has_c_t && !c_ovr_t;
+    const char *t0 = music ? "Letra"
+                     : a->panel == App::PANEL_COMMENTS ? "Comentarios"
+                     : chat_disabled_t ? (comments_disabled_t ? "Sin chat" : "Comentarios")
+                     : "Chat";
     a->tab_btn[0]->label(t0);
+    if (!music && chat_disabled_t && a->panel != App::PANEL_COMMENTS) {
+        a->tab_btn[0]->deactivate();
+        a->related_tab = true;
+    } else {
+        a->tab_btn[0]->activate();
+    }
     a->tab_btn[1]->label(music ? "Cola" : "Siguientes");
     bool second = music ? a->panel == App::PANEL_QUEUE : a->related_tab;
     a->tab_btn[0]->set_selected(!second);
@@ -310,15 +329,21 @@ void App::start_chat()
     stop_chat();
     if (panel == PANEL_NONE || panel == PANEL_LYRICS || panel == PANEL_QUEUE || setting("chat", "1") != "1")
         return;
+    bool c_ovr = false, has_c = backend_comments_enabled(cur.item.plat, c_ovr);
+    bool ch_ovr = false, has_ch = backend_chat_enabled(cur.item.plat, ch_ovr);
+    bool comments_on = has_c ? c_ovr : (cur.item.plat == P_YOUTUBE);
+    bool chat_on = has_ch ? ch_ovr : true;
     int g = chat_gen;
     std::string url = cur.item.url;
     if (panel == PANEL_COMMENTS) {
+        if (!comments_on) return;
         comments->clear_all();
         com_next.clear();
         com_create.clear();
         load_comments();
         return;
     }
+    if (!chat_on) return;
     chat->title = panel == PANEL_LIVE ? "Chat" : "Chat de la repetición";
     if (panel == PANEL_REPLAY) {
         chat->status = "Cargando el chat de la repetición…";
@@ -1036,6 +1061,11 @@ void App::open_item(const Item &it)
     cur_source = -1;
     panel = panel_for(it);
     related_tab = setting("video_panel", "main") == "related";
+    bool c_ovr = false, has_c = backend_comments_enabled(it.plat, c_ovr);
+    bool ch_ovr = false, has_ch = backend_chat_enabled(it.plat, ch_ovr);
+    bool comments_on = has_c ? c_ovr : (it.plat == P_YOUTUBE && !it.live);
+    bool chat_on = has_ch ? ch_ovr : true;
+    if (!comments_on && (!chat_on || !it.live)) related_tab = true;
     vid_w = vid_h = 0;
     chat->clear_all();
     comments->clear_all();
@@ -1074,6 +1104,12 @@ void App::play_source(int idx, double start)
     cur_source = idx;
     quality->value(idx);
     const Source &s = cur.sources[idx];
+    if (getenv("SANSON_DEBUG"))
+        fprintf(stderr, "[play] kind=%d url='%s' label='%s'\n",
+                (int)s.kind, s.url.c_str(), s.label.c_str());
+    if (s.kind == S_HACKSTREAM) {
+        sp_stop_hackstream();
+    }
     sp_clear();
     PlayRequest r;
     r.sub = sub_path;
@@ -1096,6 +1132,21 @@ void App::play_source(int idx, double start)
         r.video = own(sp_add_range(s.url.c_str(), s.vlen, "https://www.youtube.com"));
         if (!s.audio.empty())
             r.audio = own(sp_add_range(s.audio.c_str(), s.alen, "https://www.youtube.com"));
+    } else if (s.kind == S_HACKSTREAM ||
+               s.url.find("hackstream.io/watch/") != std::string::npos ||
+               s.url.find("odysee.com/") != std::string::npos ||
+               s.url.rfind("lbry://", 0) == 0) {
+        r.video = own(sp_add_hackstream(s.url.c_str()));
+        if (getenv("SANSON_DEBUG"))
+            fprintf(stderr, "[play] hackstream_proxy -> %s\n", r.video.c_str());
+        if (r.video.empty()) {
+            video->text = "No se pudo iniciar hackstream_proxy";
+            video->redraw();
+            set_status("Error al resolver stream con hackstream_proxy");
+            return;
+        }
+        if (!s.audio.empty())
+            r.audio = own(sp_add_direct(s.audio.c_str()));
     } else {
         r.video = own(sp_add_direct(s.url.c_str()));
         if (!s.audio.empty())

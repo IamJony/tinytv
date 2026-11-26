@@ -5,7 +5,7 @@ set -e
 
 D=$(cd "$(dirname "$0")" && pwd)
 APP=tinytv
-VER=1.0.0
+VER=1.0.1
 OUT="$D/tcz"
 SHARE=usr/local/share/tinytv
 

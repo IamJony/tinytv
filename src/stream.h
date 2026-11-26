@@ -22,6 +22,8 @@ int sp_start(void);
 int sp_port(void);
 char *sp_add_range(const char *url, long long length, const char *referer);
 char *sp_add_direct(const char *url);
+char *sp_add_hackstream(const char *url);
+void sp_stop_hackstream(void);
 char *sp_add_hls(const char *url, int flags, double start);
 void sp_clear(void);
 int sp_hls_variants(const char *master_url, sp_variant **out);

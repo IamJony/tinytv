@@ -18,5 +18,7 @@
     "imgur.com",
     ".googleusercontent.com",
     ".*" 
-  ]
+  ],
+  "comments": false,
+  "chat": false
 }

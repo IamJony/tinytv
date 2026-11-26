@@ -422,10 +422,7 @@ std::string store_local_version(const std::string &id)
 }
 bool store_has_update(const StorePlugin &p)
 {
-    if (!p.installed)
-        return false;
-    std::string local = store_local_version(p.id);
-    return !local.empty() && local != p.version;
+    return p.installed && !p.local_version.empty() && p.local_version != p.version;
 }
 static void ensure_includes(const std::string &id) {
     std::string cfg = read_file(user_plugins_dir() + "/" + id + "/config.json");
@@ -520,7 +517,8 @@ void store_install(const StorePlugin &p, std::function<void(bool, std::string)> 
             return;
         }
         ensure_includes(p.id);
-        awake([cb] { cb(true, ""); });
+        bool ok = store_installed(p.id);
+        awake([cb, ok] { cb(ok, ok ? "" : "El ZIP no contiene un config.json valido."); });
     }).detach();
 }
 

@@ -18,7 +18,7 @@ DATADIR ?= $(PREFIX)/share/tinytv
 
 $(shell mkdir -p build)
 
-all: build/tinytv build/tinytv-cli build/sp-test build/dl-test
+all: build/tinytv build/tinytv-cli build/sp-test build/dl-test build/hackstream_proxy
 
 build/qjs.a: $(QJS_SRC)
 	mkdir -p build/qjs
@@ -66,3 +66,6 @@ install: all
 
 clean:
 	rm -rf build
+build/hackstream_proxy: src/hackstream_proxy.c
+	@mkdir -p build
+	$(CC) -O2 -pipe -Wall -Wextra -Wno-unused-result -std=c11 $< -o $@ -lcurl -pthread

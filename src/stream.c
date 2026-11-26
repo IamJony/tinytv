@@ -3,14 +3,17 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
@@ -351,6 +354,8 @@ double sp_hls_duration(const char *media_url)
     free(b.data);
     return total;
 }
+
+static void stop_hs_locked(void);
 
 void sp_clear(void)
 {
@@ -913,4 +918,111 @@ int sp_start(void)
     pthread_create(&t, NULL, accept_thread, NULL);
     pthread_detach(t);
     return port;
+}
+
+static pid_t hs_pid = -1;
+
+static void stop_hs_locked(void)
+{
+    if (hs_pid > 0) {
+        pid_t p = hs_pid;
+        hs_pid = -1;
+        kill(-p, SIGTERM);
+        kill(p, SIGTERM);
+        int st = 0;
+        for (int i = 0; i < 20 && waitpid(p, &st, WNOHANG) == 0; i++)
+            usleep(50000);
+        if (waitpid(p, &st, WNOHANG) == 0) {
+            kill(-p, SIGKILL);
+            kill(p, SIGKILL);
+            waitpid(p, &st, 0);
+        }
+    }
+}
+
+void sp_stop_hackstream(void)
+{
+    pthread_mutex_lock(&lock);
+    stop_hs_locked();
+    pthread_mutex_unlock(&lock);
+    usleep(500000); /* dar tiempo al SO a cerrar los sockets del CDN */
+}
+
+static char *run_hackstream_proxy_url(const char *url)
+{
+    int pout[2];
+    if (pipe(pout) != 0)
+        return NULL;
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(pout[0]);
+        close(pout[1]);
+        return NULL;
+    }
+    if (pid == 0) {
+        setpgid(0, 0);
+        close(pout[0]);
+        dup2(pout[1], STDOUT_FILENO);
+        if (pout[1] != STDOUT_FILENO)
+            close(pout[1]);
+        if (!getenv("SP_DEBUG")) {
+            int dn = open("/dev/null", O_WRONLY);
+            if (dn >= 0) {
+                dup2(dn, STDERR_FILENO);
+                if (dn > STDERR_FILENO)
+                    close(dn);
+            }
+        }
+        const char *cands[] = {
+            "./build/hackstream_proxy",
+            "/home/j/Documents/tinytv2/build/hackstream_proxy",
+            "/tmp/hackstream_proxy",
+            "hackstream_proxy",
+            NULL
+        };
+        for (int i = 0; cands[i]; i++) {
+            if (strchr(cands[i], '/'))
+                execl(cands[i], "hackstream_proxy", url, "--serve-only", (char *)NULL);
+            else
+                execlp(cands[i], "hackstream_proxy", url, "--serve-only", (char *)NULL);
+        }
+        _exit(127);
+    }
+    close(pout[1]);
+    hs_pid = pid;
+
+    char line[4096];
+    size_t used = 0;
+    while (used + 1 < sizeof(line)) {
+        char ch = 0;
+        ssize_t n = read(pout[0], &ch, 1);
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n <= 0 || ch == '\n')
+            break;
+        if (ch != '\r')
+            line[used++] = ch;
+    }
+    line[used] = '\0';
+    close(pout[0]);
+
+    if (strncmp(line, "http://", 7) != 0 && strncmp(line, "https://", 8) != 0) {
+        if (getenv("SP_DEBUG"))
+            fprintf(stderr, "[sp] hackstream_proxy fallo, salida: '%s'\n", line);
+        stop_hs_locked();
+        return NULL;
+    }
+    if (getenv("SP_DEBUG"))
+        fprintf(stderr, "[sp] proxy OK: %s\n", line);
+    return strdup(line);
+}
+
+char *sp_add_hackstream(const char *url)
+{
+    if (!url || !*url)
+        return NULL;
+    pthread_mutex_lock(&lock);
+    char *proxy_url = run_hackstream_proxy_url(url);
+    pthread_mutex_unlock(&lock);
+    return proxy_url;
 }

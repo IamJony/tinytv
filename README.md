@@ -1,12 +1,6 @@
 # TinyTV
-**TinyTV** es un *fork* de **[Sanson](https://gitlab.com)** que incorpora un **sistema de plugins externos** y una **tienda integrada** para instalar, actualizar y gestionar plataformas de *streaming* adicionales (LatinoTV, RamenTV, Internet Archive, entre otras).
 
-A diferencia del proyecto original, TinyTV apuesta por un enfoque más simple y ligero:
-
-* **Enfoque en compatibilidad:** Prioriza el soporte para plataformas no disponibles en Sanson por encima de incluir todas sus funciones.
-* **Base estable:** Está construido sobre una versión anterior de Sanson de forma intencional, ya que no busca estar a la vanguardia en novedades, sino mantener una estructura liviana.
-
-
+**TinyTV** es un fork del proyecto **[Sanson](https://gitlab.com/AnddyCort/Sanson-FLinux )**, a diferencia del proyecto original este integra un **sistema de plugins externos** y añade una **Tienda de plugins** para instalar, actualizar y gestionar nuevas plataformas de streaming (LatinoTV, RamenTV, Internet Archive, etc.) .
 
 <p align="center">
   <img src="capturas/ui.png" width="32%" alt="TinyTV: interfaz principal" />

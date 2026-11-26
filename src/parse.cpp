@@ -6,6 +6,15 @@
 
 #include "stream.h"
 
+static bool is_hackstream_url(const std::string &u)
+{
+    return u.find("hackstream.io/watch/") != std::string::npos
+        || u.find("odysee.com/") != std::string::npos
+        || u.find("odysee.tv/") != std::string::npos
+        || u.find("lbry.tv/") != std::string::npos
+        || u.rfind("lbry://", 0) == 0;
+}
+
 std::string jstr(cJSON *o, const char *k)
 {
     cJSON *v = cJSON_GetObjectItemCaseSensitive(o, k);
@@ -352,7 +361,9 @@ static void parse_sources(Details &d, cJSON *root)
         // Qualities are named after the short side: a vertical 1080x1920 video is 1080p, not 1920p.
         int wd = (int)jnum(s, "width", 0), q = wd > 0 && wd < src.height ? wd : src.height;
         src.label = (q ? std::to_string(q) + "p" : jstr(s, "name")) + codec_tag(codec);
-        if (u.find("googlevideo.com") != std::string::npos) {
+        if (is_hackstream_url(u)) {
+            src.kind = S_HACKSTREAM;
+            } else if (u.find("googlevideo.com") != std::string::npos) {
             src.kind = S_RANGE;
             src.audio = audio;
             src.alen = alen;
@@ -391,7 +402,7 @@ static void parse_sources(Details &d, cJSON *root)
         add_hls(d, hls);
     if (d.sources.empty() && !audio.empty()) {
         Source a;
-        a.kind = audio.find("googlevideo.com") != std::string::npos ? S_RANGE : S_DIRECT;
+        a.kind = is_hackstream_url(audio) ? S_HACKSTREAM : (audio.find("googlevideo.com") != std::string::npos ? S_RANGE : S_DIRECT);
         a.url = audio;
         a.vlen = alen;
         a.label = "Solo audio";

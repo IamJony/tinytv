@@ -59,8 +59,6 @@ function fetchStreamsApi() {
 // Busca un stream en la API por su URL
 function findStreamInfo(url) {
     const api = fetchStreamsApi();
-    // La API devuelve un array de objetos { url, quality, labels, ... }
-    // Buscamos coincidencia exacta de URL
     const found = api.find(s => s.url === url);
     return found || null;
 }
@@ -92,7 +90,6 @@ function parseM3U(text) {
             const url = line;
             const id = sansonPid(PLATFORM, url);
             
-            // Intentamos obtener la calidad y etiquetas de la API
             let quality = "";
             let labels = [];
             const streamInfo = findStreamInfo(url);
@@ -110,7 +107,6 @@ function parseM3U(text) {
                 isLive: true,
                 duration: 0,
                 viewCount: -1,
-                // Metadatos extra (no estándar, pero útil para el detalle)
                 quality: quality,
                 labels: labels,
                 tvgId: currentInfo.tvgId
@@ -148,15 +144,31 @@ source.search = function (query) {
     return new VideoPager(filtered, false);
 };
 
+source.sansonFeed = function (urls) {
+    // Tarjeta con la imagen de la ONU y todos los canales
+    const todosLosCanales = new PlatformChannel({
+        id: sansonPid(PLATFORM, "todos-los-canales"),
+        name: "Todos los canales",
+        url: "country:es_unificado.m3u",
+        thumbnail: "https://flagcdn.com/w160/un.png",
+        description: "Lista completa de canales de LatinoTV",
+        subscribers: -1
+    });
+    
+    return new ChannelPager([todosLosCanales], false);
+};
+
 source.getContentDetails = function (url) {
-    // 1. Buscamos el nombre real del canal en la lista M3U
+    // Manejar cuando se abre "Todos los canales" desde el Feed
+    if (url === "country:es_unificado.m3u") {
+        // Buscamos el canal real en el archivo es_unificado.m3u
+        // Como es una lista, en realidad el usuario debería ver la lista en getChannelContents
+    }
+
     let channelName = "Canal en vivo";
     let groupName = "Latinoamérica";
     let qualityText = "Calidad desconocida";
     
-    // Buscamos en todas las listas (es rápido porque ya están en caché o se descargan)
-    // Para evitar descargar todo, podríamos buscar solo en la lista que corresponde, 
-    // pero como el usuario pudo haber buscado, lo hacemos global.
     const allFiles = COUNTRIES.map(c => c.file).concat("es_unificado.m3u");
     for (const file of allFiles) {
         try {
@@ -178,13 +190,10 @@ source.getContentDetails = function (url) {
                     break;
                 }
             }
-            if (channelName !== "Canal en vivo") break; // Encontrado
-        } catch (e) {
-            // Ignorar errores de descarga de otras listas
-        }
+            if (channelName !== "Canal en vivo") break;
+        } catch (e) {}
     }
 
-    // 2. Intentamos obtener la calidad de la API
     const streamInfo = findStreamInfo(url);
     if (streamInfo) {
         if (streamInfo.quality) {
@@ -195,7 +204,6 @@ source.getContentDetails = function (url) {
         }
     }
 
-    // 3. Construimos la descripción con advertencia
     const description = `Canal: ${channelName}\nCategoría: ${groupName}\nCalidad: ${qualityText}\n\n️ AVISO: Algunos canales pueden no funcionar. Todos los enlaces son extraídos de fuentes libres y públicas. Si un canal no carga, prueba con otro. La resolucion y calidad depende completamente de la transmicion de ese canal no de la app`;
 
     const isHls = url.includes(".m3u8") || url.includes(".ts");
@@ -203,10 +211,10 @@ source.getContentDetails = function (url) {
     if (isHls) {
         return new PlatformVideoDetails({
             id: sansonPid(PLATFORM, url),
-            name: channelName, // Nombre real
+            name: channelName,
             url: url,
             isLive: true,
-            description: description, // Descripción con advertencia
+            description: description,
             video: new VideoSourceDescriptor([
                 new HLSSource({
                     name: "En Vivo",
@@ -243,12 +251,15 @@ source.getChannel = function (url) {
         if (c) {
             name = c.name;
             desc = "Canales de " + c.name;
+        } else if (file === "es_unificado.m3u") {
+            name = "Todos los canales";
+            desc = "Lista completa de canales de LatinoTV";
         }
     }
     return new PlatformChannel({
         id: sansonPid(PLATFORM, url || "latinotv-all"),
         name: name,
-        url: "https://github.com/IamJony/IPTVListaLibre",
+        url: url,
         description: desc,
         subscribers: -1
     });

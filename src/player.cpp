@@ -214,7 +214,7 @@ void player_play(unsigned long wid, const PlayRequest &req)
     status = "Conectando…";
     volume = atoi(setting("volume", "80").c_str());
 
-    std::vector<std::string> a = {"mplayer", "-slave", "-quiet", "-identify", "-idle", "-nomouseinput",
+    std::vector<std::string> a = {"mplayer", "-prefer-ipv4", "-slave", "-quiet", "-identify", "-idle", "-nomouseinput",
                                   "-input", "nodefault-bindings:conf=/dev/null", "-noconsolecontrols",
                                   "-wid", std::to_string(wid), "-vo", setting("vo", "xv,x11"), "-ao",
                                   "pulse,alsa,null", "-zoom", "-framedrop", "-sws", "0", "-lavdopts",
@@ -245,6 +245,9 @@ void player_play(unsigned long wid, const PlayRequest &req)
         // NO añadir -forceidx: rompe HLS.
         a.push_back("-correct-pts"); // Auto-detect demuxer (mpegts)
     } else {
+        if (!req.audio_only)
+            a.insert(a.end(), {"-demuxer", "lavf"});
+    a.insert(a.end(), {"-lavfdopts", "probesize=100000"});
         a.push_back("-correct-pts");
     }
     if (!req.audio.empty())

@@ -32,7 +32,7 @@ fi
 if [ -n "$INFO_FILE" ] && [ -f "$INFO_FILE" ]; then
     VERSION=$(grep -i '^Version:' "$INFO_FILE" | awk '{print $2}' | tr -d '\r')
 else
-    VERSION="1.0.0"
+    VERSION="1.0.1"
 fi
 
 if [ -z "$VERSION" ]; then

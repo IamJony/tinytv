@@ -6,6 +6,7 @@
 #include <FL/x.H>
 #include <algorithm>
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <unistd.h>
 
@@ -1020,8 +1021,89 @@ static void open_from_arg(const char *arg)
     it.title = u;
     app->open_item(it);
 }
+
+// ---------------------------------------------------------------------------
+// Argumentos de línea de comandos.
+//   --debug / -d  : equivale a SANSON_DEBUG=1 SP_DEBUG=1
+//   --help  / -h  : ayuda breve y sale
+//   --version     : versión y sale
+// Los logs se activan ANTES de backend_start() (log_cb y ensure_open leen
+// getenv), por eso parse_args() se llama al principio de main().
+// ---------------------------------------------------------------------------
+static const char *TINYTV_DOCS = "https://raw.githubusercontent.com/IamJony/tinytv/refs/heads/main/docs/docs.md";
+static const char *TINYTV_VERSION = "1.0.1";
+
+static void print_help()
+{
+    const char *home = getenv("HOME");
+    std::string cfg = home ? home : "~";
+    cfg += "/.config/tinytv/plugins";
+
+    printf(
+        "TinyTV - reproduce contenido streaming de diversas plataformas de manera ligera y rapida.\n"
+        "\n"
+        "TinyTV es un fork de Sanson que incorpora un sistema de plugins externos\n"
+        "y una tienda integrada para instalar, actualizar y gestionar plataformas\n"
+        "de streaming adicionales.\n"
+        "\n"
+        "\n"
+        "Uso:\n"
+        "  tinytv [OPCIONES] [ENLACE]\n"
+        "\n"
+        "Opciones:\n"
+        "  -d, --debug       Muestra los logs de depuración (equivale a SANSON_DEBUG=1 SP_DEBUG=1).\n"
+        "  -h, --help        Muestra esta ayuda.\n"
+        "      --version     Muestra la versión actual instalada.\n"
+        "\n"
+        "Entorno:\n"
+        "  SANSON_SHARE      Directorio de datos (por defecto /usr/local/share/tinytv).\n"
+        "  SANSON_DEBUG=1    Logs del host JS.\n"
+        "  SP_DEBUG=1        Logs del stream/proxy.\n"
+        "  SANSON_OPEN       \"ajustes\", \"descargas\", \"<plat>:?query\", \"<plat>:@canal\", \"<plat>:video\".\n"
+        "\n"
+        "Plugins:\n"
+        "\n"
+        "Directorio de plugins %s\n"
+        "\n"
+        "Ejemplos:\n"
+        "  tinytv --debug\n"
+        "  tinytv https://www.youtube.com/watch?v=dQw4w9WgXcQ (debe tener el plugin youtube instalado)\n"
+        "  SANSON_OPEN=0:?kimetsu tinytv\n"
+        "\n"
+        "Documentación completa:\n"
+        "  %s\n",
+        cfg.c_str(), TINYTV_DOCS);
+}
+
+static void print_version()
+{
+    printf("TinyTV %s\n", TINYTV_VERSION);
+    printf("Documentación: %s\n", TINYTV_DOCS);
+}
+
+// Devuelve true si ya se atendió --help/--version y main debe salir sin abrir la ventana.
+static bool parse_args(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++) {
+        if (!argv[i]) continue;
+        if (!strcmp(argv[i], "--debug") || !strcmp(argv[i], "-d")) {
+            setenv("SANSON_DEBUG", "1", 1);
+            setenv("SP_DEBUG", "1", 1);
+        } else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
+            print_help();
+            return true;
+        } else if (!strcmp(argv[i], "--version")) {
+            print_version();
+            return true;
+        }
+    }
+    return false;
+}
+
 int main(int argc, char **argv)
 {
+    if (parse_args(argc, argv))
+        return 0;
     Fl::lock();
     Fl::visual(FL_RGB);
     Fl_Image::RGB_scaling(FL_RGB_SCALING_BILINEAR);

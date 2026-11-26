@@ -14,6 +14,8 @@ void backend_scan_plugins();
 int backend_plat_count();
 const char *backend_plat_name_dyn(int plat);
 std::string backend_plat_id(int plat);
+bool backend_comments_enabled(int plat, bool &out);
+bool backend_chat_enabled(int plat, bool &out);
 
 struct Item {
     int plat = 0;
@@ -52,7 +54,7 @@ struct Source {
     long long vlen = 0, alen = 0;
 };
 
-enum { S_HLS, S_RANGE, S_DIRECT };
+enum { S_HLS, S_RANGE, S_DIRECT, S_HACKSTREAM };
 
 struct AudioTrack {
     std::string label, url;
