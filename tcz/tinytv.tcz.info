@@ -4,7 +4,7 @@ Version:        1.0.1
 Author:         AnddyCort (original Sansón), IamJony (TinyTV fork)
 Original-site:  https://github.com/IamJony/tinytv
 Copying-policy: GPL-3.0-or-later; QuickJS and cJSON MIT
-Size:           1120K
+Size:           1132K
 Extension_by:   IamJony
 Tags:           youtube twitch kick music video live chat player mplayer plugins
 Comments:       Fork of Sansón (by AnddyCort), maintained by IamJony.
